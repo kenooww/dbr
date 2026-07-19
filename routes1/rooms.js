@@ -1,7 +1,9 @@
 const express = require('express');
+const fs = require('fs');
+const path = require('path');
 const Room = require('../models/Room');
 const { protect } = require('../middleware/auth');
-const { upload, cloudinary } = require('../utils/upload');
+const upload = require('../utils/upload');
 
 const router = express.Router();
 
@@ -18,7 +20,7 @@ router.get('/:id', async (req, res) => {
   res.json(room);
 });
 
-// POST /api/rooms - admin only, with optional image upload (stored on Cloudinary)
+// POST /api/rooms - admin only, with optional image upload
 router.post('/', protect, upload.single('image'), async (req, res) => {
   try {
     const { name, type, description, pricePerNight, capacity, amenities, available } = req.body;
@@ -36,8 +38,7 @@ router.post('/', protect, upload.single('image'), async (req, res) => {
             .map((a) => a.trim())
             .filter(Boolean)
         : [],
-      image: req.file ? req.file.path : '', // Cloudinary secure_url
-      imagePublicId: req.file ? req.file.filename : '', // Cloudinary public_id
+      image: req.file ? `/uploads/rooms/${req.file.filename}` : '',
     });
 
     res.status(201).json(room);
@@ -68,12 +69,12 @@ router.put('/:id', protect, upload.single('image'), async (req, res) => {
     }
 
     if (req.file) {
-      // remove the old Cloudinary image if there was one, then swap in the new one
-      if (room.imagePublicId) {
-        cloudinary.uploader.destroy(room.imagePublicId).catch(() => {});
+      // remove old image file if it exists
+      if (room.image) {
+        const oldPath = path.join(__dirname, '..', room.image);
+        fs.unlink(oldPath, () => {});
       }
-      room.image = req.file.path;
-      room.imagePublicId = req.file.filename;
+      room.image = `/uploads/rooms/${req.file.filename}`;
     }
 
     await room.save();
@@ -88,8 +89,9 @@ router.delete('/:id', protect, async (req, res) => {
   const room = await Room.findById(req.params.id);
   if (!room) return res.status(404).json({ message: 'Room not found.' });
 
-  if (room.imagePublicId) {
-    cloudinary.uploader.destroy(room.imagePublicId).catch(() => {});
+  if (room.image) {
+    const imgPath = path.join(__dirname, '..', room.image);
+    fs.unlink(imgPath, () => {});
   }
 
   await room.deleteOne();

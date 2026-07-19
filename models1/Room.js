@@ -12,8 +12,7 @@ const roomSchema = new mongoose.Schema(
     pricePerNight: { type: Number, required: true, min: 0 },
     capacity: { type: Number, required: true, min: 1, default: 2 },
     amenities: [{ type: String, trim: true }],
-    image: { type: String, default: '' }, // Cloudinary secure_url
-    imagePublicId: { type: String, default: '' }, // Cloudinary public_id, needed to delete/replace the file
+    image: { type: String, default: '' }, // stored path e.g. /uploads/rooms/xyz.jpg
     available: { type: Boolean, default: true },
   },
   { timestamps: true }
