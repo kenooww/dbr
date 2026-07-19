@@ -42,4 +42,9 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Amihan Cove Resort server running on http://localhost:${PORT}`));
+
+if (process.env.VERCEL !== '1') {
+  app.listen(PORT, () => console.log(`Amihan Cove Resort server running on http://localhost:${PORT}`));
+}
+
+module.exports = app;
